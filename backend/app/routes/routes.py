@@ -1,6 +1,6 @@
-from flask import Blueprint, jsonify, request
-from backend.data.questions import firstSetQuestions
-from backend.schemas.question_schemas import QuestionSchema
+from flask import Blueprint, jsonify
+from ..data.questions import firstSetQuestions
+from ..schemas.question_schemas import QuestionSchema
 
 api_blueprint = Blueprint('api', __name__)
 schema = QuestionSchema(many=True)

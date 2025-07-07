@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-from backend.routes.routes import api_blueprint
+from .routes.routes import api_blueprint
 
 def create_app():
     app = Flask(__name__)
