@@ -2,9 +2,8 @@ firstSetQuestions = [
     {
         "id": 1,
         "question": "What is the primary function of your software?",
-        "options": ["Data management or analytics", "Customer service or support",
-                    "Financial services or risk assessment",
-                    "Healthcare", "Education or training"]
+        "options": ["Healthcare",
+                    "Education"]
     },
     {
         "id": 2,
@@ -51,3 +50,11 @@ firstSetQuestions = [
                     "No AI used"]
     }
 ]
+
+# highRiskQuestions = [
+#     {
+#         "id": 1,
+#         "questions": "",
+#         "options": [""]
+#     }
+# ]
