@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from ..data.questions import firstSetQuestions
 from ..schemas.question_schemas import QuestionSchema
+from ..services.services import evaluate_answer
 
 api_blueprint = Blueprint('api', __name__)
 schema = QuestionSchema(many=True)
@@ -10,20 +11,38 @@ schema = QuestionSchema(many=True)
 def handle_value_error(error):
     return jsonify({"error": str(error)}), 400
 
-@api_blueprint.route("/first_set", methods=["GET"])
-def firstset():
-    return jsonify(schema.dump(firstSetQuestions)), 200
+@api_blueprint.route("/question_set", methods=["GET", "POST"])
+def questions():
+    if request.method == 'GET':
+        return jsonify(schema.dump(firstSetQuestions)), 200
 
-@api_blueprint.route("/evaluate", methods=["GET", "POST"])
-def secondset():
     if request.method == 'POST':
         data = request.get_json()
-        results = []
-        for item in data:
-            question_id = item.get('id')
-            user_answer = item.get('answer')
-            # result, _ = evaluate_answer(question_id, user_answer)
-            # results.append(result)
+        risk = data[0].get("risk")
 
-        return jsonify(results), 200
+        if risk.lower() == "high":
+            return "High Risk Questions"
+        elif risk.lower() == "low":
+            return "Low Risk Questions"
+        else:
+            return "Invalid Risk Level"
+    return None
+
+
+@api_blueprint.route("/submit_evaluate", methods=["GET", "POST"])
+def evaluation():
+    if request.method == 'POST':
+        data = request.get_json()
+        question_id = []
+        user_answer = []
+        for item in data:
+            question_id.append(item.get("question_id"))
+            user_answer.append(item.get("selected_option_key"))
+            print(f"question: {question_id}"
+                  f"answer: {user_answer}")
+
+        result = evaluate_answer(question_id, user_answer)
+
+        return jsonify(result), 200
+
     return None
