@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from ..data.questions import firstSetQuestions
+from ..data.questions import firstSetQuestions, lowRiskQuestions
 from ..schemas.question_schemas import QuestionSchema
 from ..services.services import evaluate_answer
 
@@ -23,7 +23,7 @@ def questions():
         if risk.lower() == "high":
             return "High Risk Questions"
         elif risk.lower() == "low":
-            return "Low Risk Questions"
+            return jsonify(schema.dump(lowRiskQuestions)), 200
         else:
             return "Invalid Risk Level"
     return None
