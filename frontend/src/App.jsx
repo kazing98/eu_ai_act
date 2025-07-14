@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import HomePage from './components/HomePage';
 import PreliminaryQuestions from './components/PreliminaryQuestions';
+import RiskQuestions from './components/RiskQuestions';
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/preliminary" element={<PreliminaryQuestions />} />
+            <Route path="/risk-questions" element={<RiskQuestions />} />
           </Routes>
         </div>
       </div>

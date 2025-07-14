@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 
 // Icon components - using Lucide React for better icon variety and consistency
 // Assuming lucide-react is available in the environment.
@@ -69,42 +70,45 @@ const iconMap = {
 
 
 function PreliminaryQuestions() {
+  const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [assessmentResult, setAssessmentResult, error, setError] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [showCompletionMessage, setShowCompletionMessage] = useState(false); // State for completion message
 
-  useEffect(() => {
-    fetch('http://localhost:8000/questions/first_set')
-      .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-      })
-      .then(data => {
-        const transformedData = data.map(q => {
-          // If options is an object, convert it to an array
-          const optionsArray = Object.keys(q.options).map(key => ({
-            id: key, // Use the numeric key ("1", "2", "3") as the option's ID
-            title: q.options[key], // The value is the option text
-            description: '', // Your API doesn't provide descriptions, so keep it empty
-            icon: q.options[key].toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/--+/g, '-').replace(/^-|-$/g, '')
-          }));
-          return {
-            ...q,
-            options: optionsArray,
-          };
-        });
-        setQuestions(transformedData);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Error fetching questions:', error);
-        setError('Failed to load questions.');
-        setLoading(false);
+// fetch method 
+
+useEffect(() => {
+  fetch('http://localhost:8000/questions/question_set')
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.json();
+    })
+    .then(data => {
+      const transformedData = data.map(q => {
+        // If options is an object, convert it to an array
+        const optionsArray = Object.keys(q.options).map(key => ({
+          id: key, // Use the numeric key ("1", "2", "3") as the option's ID
+          title: q.options[key], // The value is the option text
+          description: '', // Your API doesn't provide descriptions, so keep it empty
+          icon: q.options[key].toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/--+/g, '-').replace(/^-|-$/g, '')
+        }));
+        return {
+          ...q,
+          options: optionsArray,
+        };
       });
-  }, []);
+      setQuestions(transformedData);
+      setLoading(false);
+    })
+    .catch(error => {
+      console.error('Error fetching questions:', error);
+      setError('Failed to load questions.');
+      setLoading(false);
+    });
+}, []);
   const sendAnswersToBackend = async (finalAnswers) => {
     // The backend expects a list of objects, where each object has:
     // {
@@ -122,7 +126,7 @@ function PreliminaryQuestions() {
     });
 
     try {
-      const response = await fetch('http://localhost:8000/submit_answers', { // <-- Confirm this URL is correct
+      const response = await fetch('http://localhost:8000/questions/submit_evaluate', { // <-- Confirm this URL is correct
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +142,7 @@ function PreliminaryQuestions() {
 
       const responseData = await response.json();
       console.log('Answers submitted successfully:', responseData);
-      // Handle success, e.g., show a success message
+      setAssessmentResult(responseData);
     } catch (error) {
       console.error('Error submitting answers:', error);
       setError('Failed to submit answers. Please try again.');
@@ -157,6 +161,7 @@ function PreliminaryQuestions() {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
       console.log('Final Answers:', answers);
+      sendAnswersToBackend(answers);
       setShowCompletionMessage(true); // Show completion message instead of alert
     }
   };
@@ -182,22 +187,66 @@ function PreliminaryQuestions() {
   return (
     <div className="bg-gray-50 font-inter flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="bg-white rounded-xl shadow-md p-6 sm:p-8 w-full max-w-4xl">
-        {showCompletionMessage ? (
-          <div className="text-center p-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Questionnaire Completed!</h2>
-            <p className="text-gray-700 mb-6">Thank you for your responses.</p>
-            <button
-              onClick={() => {
-                setShowCompletionMessage(false);
-                setCurrentQuestionIndex(0);
-                setAnswers({});
-              }}
-              className="px-6 py-2 text-base font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Start Over
-            </button>
-          </div>
-        ) : (
+
+{showCompletionMessage ? (
+  <div className="text-center p-10">
+    {assessmentResult && assessmentResult.risk ? ( // Check if assessmentResult and risk exist
+      <div className="flex flex-col items-center justify-center">
+        <div className="text-red-500 mb-4">
+          {/* Assuming you have an icon for a warning, like a Lucide `AlertTriangle` */}
+          {/* For simplicity, I'm using an SVG similar to your screenshot. */}
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-alert-triangle">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/>
+            <path d="M12 9v4"/>
+            <path d="M12 17h.01"/>
+          </svg>
+        </div>
+        <p className="text-lg font-semibold text-gray-500 mb-2">Preliminary Assessment</p>
+        <h2 className="text-4xl font-bold text-red-600 mb-4">
+          {assessmentResult.risk === "HIGH" ? "High Risk" : "Low Risk"}
+        </h2>
+        <p className="text-gray-700 mb-6 max-w-md">
+          {assessmentResult.risk === "HIGH"
+            ? "Based on your answers, your software likely involves high-risk data processing activities under GDPR. A more detailed analysis is strongly recommended."
+            : "Based on your answers, your software appears to involve low-risk data processing activities under GDPR. You may proceed with confidence." // Or whatever low risk message you want
+          }
+        </p>
+        <button
+          onClick={() => {
+            navigate('/risk-questions', { state: { assessmentResult: assessmentResult } });
+          
+            console.log("Analyze & Get Recommendations clicked!");
+  
+          }}
+          className="px-6 py-3 text-lg font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors flex items-center"
+        >
+          Analyze & Get Recommendations
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right ml-2">
+            <path d="M5 12h14"/>
+            <path d="m12 5 7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    ) : (
+      // Fallback if assessmentResult is not available or doesn't have risk (e.g., initial state or error)
+      <div className="text-center p-10">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Questionnaire Completed!</h2>
+        <p className="text-gray-700 mb-6">Thank you for your responses.</p>
+        <button
+          onClick={() => {
+            setShowCompletionMessage(false);
+            setCurrentQuestionIndex(0);
+            setAnswers({});
+            setAssessmentResult(null); // Reset result on start over
+          }}
+          className="px-6 py-2 text-base font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Start Over
+        </button>
+      </div>
+    )}
+  </div>
+) : (
           <>
             <div className="mb-8">
               <p className="text-sm font-medium text-gray-500 mb-2">
