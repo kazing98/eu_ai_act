@@ -66,7 +66,7 @@ firstSetQuestions = [
 lowRiskQuestions = [
     {
         "id": 1,
-        "questions": "Does your software interact directly with users in a conversational or helpdesk format (e.g., chatbots)?",
+        "question": "Does your software interact directly with users in a conversational or helpdesk format (e.g., chatbots)?",
         "options": {
             "1": "Yes",
             "2": "Mostly",
@@ -76,7 +76,7 @@ lowRiskQuestions = [
     },
     {
         "id": 2,
-        "questions": "Does the system generate or manipulate text, images, audio, or video intended for public display (e.g., AI-generated marketing content)?",
+        "question": "Does the system generate or manipulate text, images, audio, or video intended for public display (e.g., AI-generated marketing content)?",
         "options": {
             "1": "Yes",
             "2": "Mostly",
@@ -86,7 +86,7 @@ lowRiskQuestions = [
     },
     {
         "id": 3,
-        "questions": "Does your system employ emotion analysis or biometric profiling on end-users (e.g., detecting mood, stress)?",
+        "question": "Does your system employ emotion analysis or biometric profiling on end-users (e.g., detecting mood, stress)?",
         "options": {
             "1": "Yes",
             "2": "Mostly",
@@ -96,7 +96,7 @@ lowRiskQuestions = [
     },
     {
         "id": 4,
-        "questions": "Is your AI used to generate deepfake-style content or disguised impersonation (e.g., synthetic voice or avatars)?",
+        "question": "Is your AI used to generate deepfake-style content or disguised impersonation (e.g., synthetic voice or avatars)?",
         "options": {
             "1": "Yes",
             "2": "Mostly",
@@ -106,7 +106,7 @@ lowRiskQuestions = [
     },
     {
         "id": 5,
-        "questions": "Does the software serve as a recommendation engine that users interact with directly (e.g., product, movie, or job suggestions)?",
+        "question": "Does the software serve as a recommendation engine that users interact with directly (e.g., product, movie, or job suggestions)?",
         "options": {
             "1": "Yes",
             "2": "Mostly",
@@ -116,7 +116,7 @@ lowRiskQuestions = [
     },
     {
         "id": 6,
-        "questions": "Does your system include an AI-powered translation or summarisation feature that users utilise directly?",
+        "question": "Does your system include an AI-powered translation or summarisation feature that users utilise directly?",
         "options": {
             "1": "Yes",
             "2": "Mostly",
@@ -126,7 +126,7 @@ lowRiskQuestions = [
     },
     {
         "id": 7,
-        "questions": "Does the software generate AI-based chat or advisory responses beyond static FAQ?",
+        "question": "Does the software generate AI-based chat or advisory responses beyond static FAQ?",
         "options": {
             "1": "Yes",
             "2": "Mostly",
@@ -136,7 +136,7 @@ lowRiskQuestions = [
     },
     {
         "id": 8,
-        "questions": "Is your AI used to enhance user-generated content (e.g., grammar checks, predictive text)?",
+        "question": "Is your AI used to enhance user-generated content (e.g., grammar checks, predictive text)?",
         "options": {
             "1": "Yes",
             "2": "Mostly",

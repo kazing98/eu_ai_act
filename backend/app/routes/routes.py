@@ -14,7 +14,14 @@ def handle_value_error(error):
 @api_blueprint.route("/question_set", methods=["GET", "POST"])
 def questions():
     if request.method == 'GET':
-        return jsonify(schema.dump(firstSetQuestions)), 200
+        questions = schema.dump(firstSetQuestions, many=True)
+
+        result = {
+            "is_first_set": True,  # <‑‑ your flag
+            "questions": questions
+        }
+
+        return jsonify(result), 200
 
     if request.method == 'POST':
         data = request.get_json()
@@ -29,19 +36,27 @@ def questions():
     return None
 
 
-@api_blueprint.route("/submit_evaluate", methods=["GET", "POST"])
+@api_blueprint.route("/submit_evaluate", methods=["POST"])
 def evaluation():
     if request.method == 'POST':
         data = request.get_json()
         question_id = []
         user_answer = []
+
         for item in data:
             question_id.append(item.get("question_id"))
             user_answer.append(item.get("selected_option_key"))
             print(f"question: {question_id}"
                   f"answer: {user_answer}")
 
-        result = evaluate_answer(question_id, user_answer)
+        result = {}
+        if data["flag"]:
+            result["risk"] = evaluate_answer(question_id, user_answer)  # index 0
+            result["user_domain"] = user_answer[0]  # sharing user response
+
+        else:
+            #second questions
+            pass
 
         return jsonify(result), 200
 

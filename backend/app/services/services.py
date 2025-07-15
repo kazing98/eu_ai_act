@@ -28,6 +28,6 @@ def evaluate_answer(question_id: list, user_answer: list):
                 match = False
                 break
         if match:
-            return {"risk": "LOW"}
+            return "LOW"
 
-    return {"risk": "HIGH"}
+    return "HIGH"
