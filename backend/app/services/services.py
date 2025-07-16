@@ -1,33 +1,53 @@
-def evaluate_answer(question_id: list, user_answer: list):
-    if not question_id or not user_answer:
-        return {"error": "Missing 'id' or 'answer'"}, 400
+def evaluate_answer(answers: list) -> str:
+    """
+    Evaluate AI system risk category based on user answers and defined risk rules.
 
-    low_risk_1 = {1: ["1", "2"],
-                2: ["1", "2"],
-                3: "4",
-                4: "6",
-                5: "4",
-                6: "4"}
+    Parameters:
+    - answers: Dict mapping question_id (as string) to selected_option_key (also string)
+    - risk_rules: Dict containing rule definitions
 
-    low_risk_2 = {1: ["1", "2"],
-                2: "2",
-                3: ["2", "3"],
-                4: ["1", "4"],
-                5: ["1", "3", "4"],
-                6: ["1", "2"]}
+    Returns: "HIGH" or "LOW"
+    """
+    risk_rules = {
+        "high_risk_flags": {
+            "1": ["1", "2"],  # Healthcare or Education
+            "2": ["1"],  # Public institution
+            "3": ["1"],  # Fully autonomous
+            "4": ["2"],  # Sensitive data
+            "5": ["1"],  # Accessible online
+            "6": ["1"],  # Affects rights or services
+            "7": ["1"],  # Minors involved
+            "8": ["2"],  # No explanation
+            "9": ["2"]  # No human in final decision
+        },
+        "low_risk_defaults": {
+            "2": ["2", "3", "4"],
+            "3": ["2", "3"],
+            "4": ["4"],
+            "5": ["2"],
+            "6": ["2"],
+            "7": ["2"],
+            "8": ["1"],
+            "9": ["1"]
+        },
+        "high_risk_threshold": 4
+    }
 
-    low_risk = [low_risk_1, low_risk_2]
+    high_risk_flags = risk_rules["high_risk_flags"]
+    threshold = risk_rules["high_risk_threshold"]
 
-    for pattern in low_risk:
-        match = True
-        for i in range(len(question_id)):
-            q_id = question_id[i]
-            ans = user_answer[i]
-            valid_answers = pattern.get(q_id)
-            if valid_answers is None or ans not in valid_answers:
-                match = False
-                break
-        if match:
-            return "LOW"
+    # Converting list of dictionary to only dictionary
+    flat_answers = {str(item["question_id"]): item["selected_option_key"] for item in answers}
 
-    return "HIGH"
+    score = 0
+    for q_id, high_vals in high_risk_flags.items():
+        user_ans = flat_answers.get(q_id)
+        if user_ans in high_vals:
+            score += 1
+
+    return "HIGH" if score >= threshold else "LOW"
+
+def user_domain(answers: list):
+    flat_answers = {str(item["question_id"]): item["selected_option_key"] for item in answers}
+
+    return flat_answers["1"]

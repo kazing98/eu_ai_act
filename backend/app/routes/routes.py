@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
-from ..data.questions import firstSetQuestions, lowRiskQuestions
+from ..data.questions import firstSetQuestions, lowRiskQuestions, highRiskQuestionEducation, highRiskQuestionHealthcare
 from ..schemas.question_schemas import QuestionSchema
-from ..services.services import evaluate_answer
+from ..services.services import evaluate_answer, user_domain
 
 api_blueprint = Blueprint('api', __name__)
 schema = QuestionSchema(many=True)
@@ -25,10 +25,15 @@ def questions():
 
     if request.method == 'POST':
         data = request.get_json()
-        risk = data[0].get("risk")
+        risk = data.get("risk")
+        user_domain = int(data.get("user_domain"))
 
-        if risk.lower() == "high":
-            return "High Risk Questions"
+        # High Risk Question for Healthcare
+        if risk.lower() == "high" and user_domain == 1:
+            return jsonify(schema.dump(highRiskQuestionHealthcare)), 200
+        # High Risk Question for Education
+        elif risk.lower() == "high" and user_domain == 2:
+            return jsonify(schema.dump(highRiskQuestionEducation)), 200
         elif risk.lower() == "low":
             return jsonify(schema.dump(lowRiskQuestions)), 200
         else:
@@ -43,16 +48,16 @@ def evaluation():
         question_id = []
         user_answer = []
 
-        for item in data:
-            question_id.append(item.get("question_id"))
-            user_answer.append(item.get("selected_option_key"))
-            print(f"question: {question_id}"
-                  f"answer: {user_answer}")
+        # for item in data['answers']:
+        #     question_id.append(item.get("question_id"))
+        #     user_answer.append(item.get("selected_option_key"))
+        #     print(f"question: {question_id}"
+        #           f"answer: {user_answer}")
 
         result = {}
-        if data["flag"]:
-            result["risk"] = evaluate_answer(question_id, user_answer)  # index 0
-            result["user_domain"] = user_answer[0]  # sharing user response
+        if data["is_first_set"]:
+            result["risk"] = evaluate_answer(data['answers'])  # index 0
+            result["user_domain"] = user_domain(data['answers'])  # sharing user response
 
         else:
             #second questions
