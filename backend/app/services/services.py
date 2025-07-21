@@ -51,3 +51,123 @@ def user_domain(answers: list):
     flat_answers = {str(item["question_id"]): item["selected_option_key"] for item in answers}
 
     return flat_answers["1"]
+
+question_groups = {
+    1: {
+        "diagnostic_support": [1, 4, 5, 6, 8, 9, 10],
+        "treatment_recommendation": [2, 4, 5, 6, 8, 9, 10],
+        "triage_or_icu": [3, 4, 5, 6, 8, 9, 10],
+        "vital_sign_monitoring": [7, 4, 5, 6, 8, 9, 10]
+    },
+    2: {
+        "grading": [1, 5, 6, 7, 9, 10],
+        "admission": [2, 5, 6, 7, 9, 10],
+        "evaluation": [3, 5, 6, 7, 9, 10],
+        "emotion_detection": [4, 5, 6, 7, 9, 10],
+        "adaptive_learning": [8, 5, 6, 7, 9, 10]
+    }
+}
+
+def sub_domain_questions(sub_domain, user_domain, highRiskQuestion):
+    question_set = []
+    if user_domain == 1 and user_domain in question_groups:
+        for domain in sub_domain["selected_option_key"]:
+            if domain in question_groups[1]:
+                question_set.append(question_groups[1][domain])
+
+        # Flattening the list of list to list
+        question_set = [item for row in question_set for item in row]
+        # Removing duplicates from list
+        question_set = list(dict.fromkeys(question_set))
+
+        return high_risk_healthcare_question(question_set, highRiskQuestion)
+
+    elif user_domain == 2 and user_domain in question_groups:
+        for domain in sub_domain["selected_option_key"]:
+            if domain in question_groups[2]:
+                question_set.append(question_groups[2][domain])
+
+        # Flattening the list of list to list
+        question_set = [item for row in question_set for item in row]
+        # Removing duplicates from list
+        question_set = list(dict.fromkeys(question_set))
+
+        return high_risk_healthcare_question(question_set, highRiskQuestion)
+
+    return None
+
+
+def high_risk_healthcare_question(question_key, highRiskQuestionHealthcare):
+    return [question for question in highRiskQuestionHealthcare if question["id"] in question_key]
+
+def high_risk_education_question(question_key, highRiskQuestionEducation):
+    return [question for question in highRiskQuestionEducation if question["id"] in question_key]
+# compliance_scoring = {
+#     "healthcare": {
+#         1: {"Yes": 2, "No": 0},
+#         2: {"Yes": 2, "No": 0},
+#         3: {"Yes": 2, "No": 0},
+#         4: {"Biometric": 2, "Medical": 2, "Other": 1, "Public": 0},
+#         5: {"Always": 2, "Sometimes": 1, "Never": 0},
+#         6: {"Yes": 2, "Not yet": 1, "No": 0},
+#         7: {"Yes": 2, "Not yet": 1, "No": 0},
+#         8: {"Always": 2, "Sometimes": 1, "Never": 0},
+#         9: {"Yes": 2, "Planned": 1, "No": 0},
+#         10: {"Yes": 2, "Partially": 1, "No": 0},
+#     },
+#     "education": {
+#         1: {"Yes": 2, "No": 0},
+#         2: {"Yes": 2, "No": 0},
+#         3: {"With validation": 2, "Yes": 1, "No": 0},
+#         4: {"No": 2, "Yes": 0},
+#         5: {"Always": 2, "Sometimes": 1, "Never": 0},
+#         6: {"Yes": 2, "Not sure": 1, "No": 0},
+#         7: {"Yes": 2, "Limited": 1, "No": 0},
+#         8: {"Yes": 2, "No": 0},
+#         9: {"Only Teachers": 2, "Admin": 1, "Others": 0},
+#         10: {"Yes": 2, "Planned": 1, "No": 0},
+#     }
+# }
+#
+# def evaluate_compliance(domain: str, answers: dict):
+#     """
+#     domain: 'healthcare' or 'education'
+#     answers: { question_id: selected_option (string) }
+#     Returns: (score, compliance_percent, band)
+#     """
+#     if domain not in compliance_scoring:
+#         raise ValueError("Unsupported domain")
+#
+#     score = 0
+#     max_score = 0
+#     scoring_table = compliance_scoring[domain]
+#     breakdown = {}
+#
+#     for qid, answer in answers.items():
+#         qid = int(qid)
+#         if qid in scoring_table:
+#             score_map = scoring_table[qid]
+#             point = score_map.get(answer, 0)
+#             score += point
+#             max_score += 2
+#             breakdown[qid] = {"answer": answer, "score": point}
+#
+#     compliance_percent = round((score / max_score) * 100, 1) if max_score > 0 else 0
+#
+#     if compliance_percent >= 85:
+#         band = "Fully Compliant"
+#     elif compliance_percent >= 70:
+#         band = "Mostly Compliant"
+#     elif compliance_percent >= 50:
+#         band = "Partially Compliant"
+#     else:
+#         band = "Non-Compliant"
+#
+#     return {
+#         "domain": domain,
+#         "score": score,
+#         "out_of": max_score,
+#         "compliance_percent": compliance_percent,
+#         "compliance_level": band,
+#         "details": breakdown
+#     }
