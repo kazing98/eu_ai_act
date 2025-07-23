@@ -140,6 +140,7 @@ compliance_scoring = {
     }
 }
 
+# Final Scoring Evaluation
 def evaluate_compliance(risk: str, user_domain: str, answers: dict):
     """
     domain: 'healthcare' or 'education'
