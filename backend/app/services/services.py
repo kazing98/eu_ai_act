@@ -1,3 +1,4 @@
+# Used to evaluate risk category
 def evaluate_answer(answers: list) -> str:
     """
     Evaluate AI system risk category based on user answers and defined risk rules.
