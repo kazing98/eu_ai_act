@@ -103,6 +103,7 @@ def high_risk_healthcare_question(question_key, highRiskQuestionHealthcare):
 def high_risk_education_question(question_key, highRiskQuestionEducation):
     return [question for question in highRiskQuestionEducation if question["id"] in question_key]
 
+# Scoring is given based on this
 compliance_scoring = {
     "healthcare": {
         1: {"1": 2, "2": 0},
