@@ -102,72 +102,102 @@ def high_risk_healthcare_question(question_key, highRiskQuestionHealthcare):
 
 def high_risk_education_question(question_key, highRiskQuestionEducation):
     return [question for question in highRiskQuestionEducation if question["id"] in question_key]
-# compliance_scoring = {
-#     "healthcare": {
-#         1: {"Yes": 2, "No": 0},
-#         2: {"Yes": 2, "No": 0},
-#         3: {"Yes": 2, "No": 0},
-#         4: {"Biometric": 2, "Medical": 2, "Other": 1, "Public": 0},
-#         5: {"Always": 2, "Sometimes": 1, "Never": 0},
-#         6: {"Yes": 2, "Not yet": 1, "No": 0},
-#         7: {"Yes": 2, "Not yet": 1, "No": 0},
-#         8: {"Always": 2, "Sometimes": 1, "Never": 0},
-#         9: {"Yes": 2, "Planned": 1, "No": 0},
-#         10: {"Yes": 2, "Partially": 1, "No": 0},
-#     },
-#     "education": {
-#         1: {"Yes": 2, "No": 0},
-#         2: {"Yes": 2, "No": 0},
-#         3: {"With validation": 2, "Yes": 1, "No": 0},
-#         4: {"No": 2, "Yes": 0},
-#         5: {"Always": 2, "Sometimes": 1, "Never": 0},
-#         6: {"Yes": 2, "Not sure": 1, "No": 0},
-#         7: {"Yes": 2, "Limited": 1, "No": 0},
-#         8: {"Yes": 2, "No": 0},
-#         9: {"Only Teachers": 2, "Admin": 1, "Others": 0},
-#         10: {"Yes": 2, "Planned": 1, "No": 0},
-#     }
-# }
-#
-# def evaluate_compliance(domain: str, answers: dict):
-#     """
-#     domain: 'healthcare' or 'education'
-#     answers: { question_id: selected_option (string) }
-#     Returns: (score, compliance_percent, band)
-#     """
-#     if domain not in compliance_scoring:
-#         raise ValueError("Unsupported domain")
-#
-#     score = 0
-#     max_score = 0
-#     scoring_table = compliance_scoring[domain]
-#     breakdown = {}
-#
-#     for qid, answer in answers.items():
-#         qid = int(qid)
-#         if qid in scoring_table:
-#             score_map = scoring_table[qid]
-#             point = score_map.get(answer, 0)
-#             score += point
-#             max_score += 2
-#             breakdown[qid] = {"answer": answer, "score": point}
-#
-#     compliance_percent = round((score / max_score) * 100, 1) if max_score > 0 else 0
-#
-#     if compliance_percent >= 85:
-#         band = "Fully Compliant"
-#     elif compliance_percent >= 70:
-#         band = "Mostly Compliant"
-#     elif compliance_percent >= 50:
-#         band = "Partially Compliant"
-#     else:
-#         band = "Non-Compliant"
-#
-#     return {
-#         "domain": domain,
-#         "score": score,
-#         "out_of": max_score,
-#         "compliance_percent": compliance_percent,
-#         "compliance_level": band,
-#         "details": breakdown
-#     }
+
+compliance_scoring = {
+    "healthcare": {
+        1: {"1": 2, "2": 0},
+        2: {"1": 2, "2": 0},
+        3: {"1": 0, "2": 2, "3": 1},
+        4: {"1": 2, "2": 2, "3": 1, "4": 0},
+        5: {"1": 2, "2": 1, "3": 0},
+        6: {"1": 2, "2": 1, "3": 0},
+        7: {"1": 2, "2": 1, "3": 0},
+        8: {"1": 2, "2": 1, "3": 0},
+        9: {"1": 2, "2": 1, "3": 0},
+        10: {"1": 2, "2": 1, "3": 0},
+    },
+    "education": {
+        1: {"1": 0, "2": 2, "3": 1},
+        2: {"1": 0, "2": 2, "3": 1},
+        3: {"1": 0, "2": 2, "3": 1},
+        4: {"1": 0, "2": 2, "3": 1},
+        5: {"1": 2, "2": 1, "3": 0},
+        6: {"1": 2, "2": 1, "3": 0},
+        7: {"1": 2, "2": 1, "3": 0},
+        8: {"1": 2, "2": 0},
+        9: {"1": 2, "2": 1, "3": 0},
+        10: {"1": 2, "2": 1, "3": 0},
+    },
+    "lowriskdomain": {
+        1: {"1": 2, "2": 1, "3": 1, "4": 0},
+        2: {"1": 2, "2": 1, "3": 1, "4": 0},
+        3: {"1": 2, "2": 1, "3": 1, "4": 0},
+        4: {"1": 2, "2": 1, "3": 1, "4": 0},
+        5: {"1": 2, "2": 1, "3": 1, "4": 0},
+        6: {"1": 2, "2": 1, "3": 1, "4": 0},
+        7: {"1": 2, "2": 1, "3": 1, "4": 0},
+        8: {"1": 2, "2": 1, "3": 1, "4": 0}
+    }
+}
+
+def evaluate_compliance(risk: str, user_domain: str, answers: dict):
+    """
+    domain: 'healthcare' or 'education'
+    answers: { question_id: selected_option (string) }
+    Returns: (score, compliance_percent, band)
+    """
+    if risk.lower() == "low":
+        domain = "lowriskdomain"
+    elif user_domain == "1":
+        domain = "healthcare"
+    elif user_domain == "2":
+        domain = "education"
+    else:
+        raise ValueError("Unknown Domain")
+    if domain not in compliance_scoring:
+        raise ValueError("Unsupported Domain")
+
+    score = 0
+    max_score = 0
+    scoring_table = compliance_scoring[domain]
+
+    # Converting list of dictionary to only dictionary
+    flat_answers = {str(item["question_id"]): item["selected_option_key"] for item in answers}
+
+    for qid, answer in flat_answers.items():
+        qid = int(qid)
+        if qid in scoring_table:
+            score_map = scoring_table[qid]
+            point = score_map.get(answer, 0)
+            score += point
+            max_score += 2
+
+    compliance_percent = round((score / max_score) * 100, 1) if max_score > 0 else 0
+
+    if compliance_percent >= 85:
+        band = "Fully Compliant"
+    elif compliance_percent >= 70:
+        band = "Mostly Compliant"
+    elif compliance_percent >= 50:
+        band = "Partially Compliant"
+    else:
+        band = "Non-Compliant"
+
+    if user_domain == "1":
+        return {
+            "domain": "Healthcare",
+            "risk_level": risk,
+            "score": score,
+            "out_of": max_score,
+            "compliance_percent": compliance_percent,
+            "compliance_level": band,
+        }
+    else:
+        return {
+            "domain": "Education",
+            "risk_level": risk,
+            "score": score,
+            "out_of": max_score,
+            "compliance_percent": compliance_percent,
+            "compliance_level": band,
+        }

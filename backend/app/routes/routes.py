@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request
 from ..data.questions import firstSetQuestions, lowRiskQuestions, highRiskQuestionEducation, highRiskQuestionHealthcare
 from ..schemas.question_schemas import QuestionSchema
-from ..services.services import evaluate_answer, user_domain, sub_domain_questions  # , final_scoring
+from ..services.services import evaluate_answer, user_domain, sub_domain_questions, \
+    evaluate_compliance  # , final_scoring
 
 api_blueprint = Blueprint('api', __name__)
 schema = QuestionSchema(many=True)
@@ -56,8 +57,7 @@ def evaluation():
             result["user_domain"] = user_domain(data['answers'])
 
         else:
-            # result["scoring"] = final_scoring(data['answers'])
-            pass
+            result["scoring"] = evaluate_compliance(data['risk'], data['user_domain'], data['answers'])
 
         return jsonify(result), 200
 
