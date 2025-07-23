@@ -9,7 +9,7 @@ const DocumentIcon = () => (
     </svg>
 );
 const UsersIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users text-blue-500"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users text-blue-500"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-2 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 );
 const BrainIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-brain text-blue-500"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v0A2.5 2.5 0 0 1 9.5 7h-3A2.5 2.5 0 0 1 4 4.5v0A2.5 2.5 0 0 1 6.5 2h3Z"/><path d="M14.5 2A2.5 2.5 0 0 1 17 4.5v0A2.5 2.5 0 0 1 14.5 7h-3A2.5 2.5 0 0 1 9 4.5v0A2.5 2.5 0 0 1 11.5 2h3Z"/><path d="M12 17.5a2.5 2.5 0 0 1-2.5-2.5v-3a2.5 2.5 0 0 1 5 0v3a2.5 2.5 0 0 1-2.5 2.5Z"/><path d="M6.5 22A2.5 2.5 0 0 1 4 19.5v-3a2.5 2.5 0 0 1 5 0v3A2.5 2.5 0 0 1 6.5 22Z"/><path d="M17.5 22a2.5 2.5 0 0 1-2.5-2.5v-3a2.5 2.5 0 0 1 5 0v3a2.5 2.5 0 0 1-2.5 2.5Z"/><path d="M6.5 12A2.5 2.5 0 0 1 4 9.5v-3a2.5 2.5 0 0 1 5 0v3A2.5 2.5 0 0 1 6.5 12Z"/><path d="M17.5 12a2.5 2.5 0 0 1-2.5-2.5v-3a2.5 2.5 0 0 1 5 0v3A2.5 2.5 0 0 1 17.5 12Z"/></svg>
@@ -20,6 +20,64 @@ const DatabaseIcon = () => (
 const CheckIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check text-white"><path d="M20 6 9 17l-5-5"/></svg>
 );
+
+// New PieChart Component to mimic the Canva style
+const PieChart = ({ score, outOf }) => {
+    const percentage = (score / outOf) * 100;
+    const radius = 40; // Smaller radius for a compact circle
+    const circumference = 2 * Math.PI * radius;
+
+    // Calculate the length of the arc for the score
+    const scoreEndAngle = (percentage / 100) * 360;
+
+    // Function to get path data for a circular arc
+    const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
+        const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0; // Adjust for SVG's 0-degree at 3 o'clock
+        return {
+            x: centerX + (radius * Math.cos(angleInRadians)),
+            y: centerY + (radius * Math.sin(angleInRadians))
+        };
+    };
+
+    const describeArc = (x, y, r, startAngle, endAngle) => {
+        const start = polarToCartesian(x, y, r, endAngle);
+        const end = polarToCartesian(x, y, r, startAngle);
+        const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
+        return [
+            "M", start.x, start.y,
+            "A", r, r, 0, largeArcFlag, 0, end.x, end.y,
+            "L", x, y, // Line to center
+            "Z" // Close path
+        ].join(" ");
+    };
+
+    const centerX = 50;
+    const centerY = 50;
+    const startAngle = 0; // Always start from the top (12 o'clock)
+
+    return (
+        <div className="flex-shrink-0 w-32 h-32 transition-transform duration-300 hover:scale-105"> {/* Fixed size container for the SVG */}
+            <svg className="w-full h-full" viewBox="0 0 100 100">
+                {/* Full circle background (for the remaining portion) */}
+                <circle
+                    cx={centerX}
+                    cy={centerY}
+                    r={radius}
+                    fill="#E0E0E0" // Light grey for the remaining portion
+                />
+                {/* Scored portion (green) */}
+                {percentage > 0 && (
+                    <path
+                        d={describeArc(centerX, centerY, radius, startAngle, scoreEndAngle)}
+                        fill="#4CAF50" // Green for the compliant part
+                    />
+                )}
+            </svg>
+        </div>
+    );
+};
+
 
 const iconMap = {
     document: DocumentIcon,
@@ -67,6 +125,27 @@ const baseStaticQuestion = {
 
 async function submitAnswersAndGetNextSteps(payload) {
     const response = await fetch('http://localhost:8000/questions/question_set', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        let errorData;
+        try {
+            errorData = await response.json();
+        } catch {
+            const textError = await response.text();
+            throw new Error(`Server error: ${response.status}. Raw response: ${textError.substring(0, 200)}...`);
+        }
+        throw new Error(errorData.message || response.statusText);
+    }
+    return response.json();
+}
+
+// This new, separate function submits the final answers to get the score.
+async function submitFinalAnswersForScoring(payload) {
+    const response = await fetch('http://localhost:8000/questions/submit_evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -233,6 +312,8 @@ function RiskQuestions() {
 
         try {
             const payload = {
+                // Ensure is_first_set is false for the final submission
+                is_first_set: false, 
                 risk: assessmentResult.risk.toLowerCase(),
                 user_domain: assessmentResult.user_domain,
                 answers: Object.keys(answers).map(questionId => ({
@@ -241,7 +322,10 @@ function RiskQuestions() {
                 })),
             };
 
-            const report = await submitAnswersAndGetNextSteps(payload);
+            console.log("Sending Final Payload to /submit_evaluate:", JSON.stringify(payload, null, 2));
+
+            // Call the dedicated function for submitting final answers for scoring
+            const report = await submitFinalAnswersForScoring(payload); 
             setFinalReport(report);
 
         } catch (err) {
@@ -250,6 +334,7 @@ function RiskQuestions() {
             setLoading(false);
         }
     };
+    
 
     const handleStartNewAssessment = () => {
         sessionStorage.removeItem('preliminaryAssessmentResult');
@@ -311,22 +396,56 @@ function RiskQuestions() {
     if (error) return <div className="text-center p-10 font-inter text-red-500">{error} <button onClick={handleStartNewAssessment} className="text-blue-600 underline ml-2">Start Over</button></div>;
 
     if (finalReport) {
+        // Extract scoring data safely
+        const { scoring } = finalReport;
+
         return (
             <div className="bg-gray-50 font-inter flex items-center justify-center min-h-screen p-4">
                 <div className="bg-white rounded-xl shadow-md p-8 w-full max-w-3xl text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Final Recommendations</h2>
-                    <p className="text-gray-700 mb-6">Here are your personalized recommendations:</p>
-                    <div className="bg-blue-50 p-4 rounded-lg text-left mb-6 border border-blue-200">
-                        <h3 className="font-semibold text-blue-800 text-lg mb-2">Key Actions Recommended:</h3>
-                        <ul className="list-disc list-inside text-blue-700 space-y-2">
-                            {finalReport.recommendations?.length > 0 ? (
-                                finalReport.recommendations.map((rec, index) => <li key={index}>{rec}</li>)
-                            ) : (
-                                <li>No specific recommendations were generated.</li>
-                            )}
-                        </ul>
-                    </div>
-                    <button onClick={handleStartNewAssessment} className="px-6 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Assessment Results</h2>
+                    <p className="text-gray-700 mb-6">Here's a summary of your AI system's compliance:</p>
+
+                    {scoring ? (
+                        <>
+                            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-lg shadow-lg mb-6 transform transition-all duration-300 hover:scale-105">
+                                <h3 className="text-4xl font-extrabold mb-4 animate-fadeIn" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+                                    {scoring.compliance_level}
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                                    <div className="bg-white bg-opacity-20 p-3 rounded-md">
+                                        <p className="text-sm font-light">Domain</p>
+                                        <p className="text-lg font-semibold">{scoring.domain}</p>
+                                    </div>
+                                    <div className="bg-white bg-opacity-20 p-3 rounded-md">
+                                        <p className="text-sm font-light">Risk Level</p>
+                                        <p className="text-lg font-semibold capitalize">{scoring.risk_level}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold text-blue-900 mb-4"> Score</div>
+                            {/* Pie Chart and Score/Percentage Display */}
+                            <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-6">
+                            
+                                <PieChart score={scoring.score} outOf={scoring.out_of} />
+                                <div className="flex flex-col items-center md:items-start">
+                                    <p className="text-5xl font-extrabold text-gray-800">
+                                        {scoring.score} / {scoring.out_of}
+                                    </p>
+                                    <p className="text-2xl font-semibold text-gray-700 mt-2">
+                                        <span className="text-blue-900 animate-pulse">{scoring.compliance_percent}%</span> Compliant
+                                    </p>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
+                            <strong className="font-bold">Error:</strong>
+                            <span className="block sm:inline ml-2">Could not retrieve scoring data.</span>
+                        </div>
+                    )}
+
+             
+                    <button onClick={handleStartNewAssessment} className="px-8 py-3 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105">
                         Start New Assessment
                     </button>
                 </div>
