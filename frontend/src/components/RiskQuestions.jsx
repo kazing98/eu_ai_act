@@ -26,25 +26,43 @@ const iconMap = {
     users: UsersIcon,
     brain: BrainIcon,
     database: DatabaseIcon,
-    'diagnostic_support': BrainIcon,
-    'treatment_planning': DocumentIcon,
+    // Medical-specific icons (reusing existing for now, can be customized)
+    'diagnostic_decision_support': BrainIcon,
+    'treatment_recommendation': DocumentIcon,
     'icu_triage_prioritization': UsersIcon,
-    'vital_sign_monitoring': DatabaseIcon,
-    'patient_communication': UsersIcon,
+    'monitoring_patient_vital_signs': DatabaseIcon,
+    'medication_planning': DocumentIcon,
+    // Education-specific icons (reusing existing for now, can be customized)
+    'grading_performance_scoring': DocumentIcon,
+    'admission_scholarship_decision_making': UsersIcon,
+    'emotion_detection_in_assessments': BrainIcon,
+    'learning_adaptation_tutoring': UsersIcon,
+    'pass_fail_evaluation': DocumentIcon,
     default: DocumentIcon,
 };
 
-const initialStaticQuestion = {
+// Define options for the static question based on domain ID
+const staticQuestionOptions = {
+    "1": [ // Medical Domain
+        { id: "diagnostic_decision_support", title: "Diagnostic decision support", backendKey: "diagnostic_support" },
+        { id: "treatment_recommendation", title: "Treatment recommendation", backendKey: "treatment_recommendation" },
+        { id: "icu_triage_prioritization", title: "ICU triage or prioritization", backendKey: "triage_or_icu" },
+        { id: "monitoring_patient_vital_signs", title: "Monitoring patient vital signs", backendKey: "vital_sign_monitoring" },
+        { id: "medication_planning", title: "Medication planning", backendKey: "medication_planning" }
+    ],
+    "2": [ // Education Domain
+        { id: "grading_performance_scoring", title: "Grading or performance scoring", backendKey: "grading" },
+        { id: "admission_scholarship_decision_making", title: "Admission or scholarship decision-making", backendKey: "admission" },
+        { id: "emotion_detection_in_assessments", title: "Emotion detection in assessments", backendKey: "emotion_detection" },
+        { id: "learning_adaptation_tutoring", title: "Learning adaptation or tutoring", backendKey: "adaptive_learning" },
+        { id: "pass_fail_evaluation", title: "Pass/fail evaluation", backendKey: "evaluation" }
+    ]
+};
+
+const baseStaticQuestion = {
     id: 2001,
     question: "Which of the following functions does your AI system perform?",
     isMultiSelect: true,
-    options: [
-        { id: "diagnostic_support", title: "Diagnostic Support" },
-        { id: "treatment_planning", title: "Treatment Planning" },
-        { id: "icu_triage_prioritization", title: "ICU Triage / Prioritization" },
-        { id: "vital_sign_monitoring", title: "Vital Sign Monitoring" },
-        { id: "patient_communication", title: "Patient Communication" }
-    ]
 };
 
 async function submitAnswersAndGetNextSteps(payload) {
@@ -81,7 +99,15 @@ function RiskQuestions() {
 
     const [showStaticQuestion, setShowStaticQuestion] = useState(true);
     const [staticQuestionAnswers, setStaticQuestionAnswers] = useState([]);
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0); // New state for current question index
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+    const [currentStaticQuestion, setCurrentStaticQuestion] = useState({
+        ...baseStaticQuestion,
+        options: []
+    });
+
+    // Helper to get all static options for the current domain for easy lookup
+    const [allStaticOptions, setAllStaticOptions] = useState([]);
 
     useEffect(() => {
         let initialResult = location.state?.assessmentResult;
@@ -99,6 +125,14 @@ function RiskQuestions() {
             return;
         }
         setAssessmentResult(initialResult);
+
+        const domainOptions = staticQuestionOptions[initialResult.user_domain] || []; 
+        setCurrentStaticQuestion(prev => ({
+            ...prev,
+            options: domainOptions
+        }));
+        // Store all options for current domain to easily map IDs to backendKeys
+        setAllStaticOptions(domainOptions);
 
         if (initialResult && !riskQuestions.length && !finalReport) {
             setShowStaticQuestion(true);
@@ -130,13 +164,19 @@ function RiskQuestions() {
         setLoading(true);
 
         try {
+            // Map the frontend option IDs to backend keys
+            const selectedBackendKeys = staticQuestionAnswers.map(selectedId => {
+                const option = allStaticOptions.find(opt => opt.id === selectedId);
+                return option ? option.backendKey : null;
+            }).filter(key => key !== null); // Filter out any nulls if an ID wasn't found (shouldn't happen if options are well-defined)
+
             const payload = {
                 is_first_set: false,
                 user_domain: assessmentResult.user_domain,
                 risk: assessmentResult.risk.toLowerCase(),
                 answers: {
-                    question_id: initialStaticQuestion.id,
-                    selected_option_key: staticQuestionAnswers,
+                    question_id: currentStaticQuestion.id,
+                    selected_option_key: selectedBackendKeys, // Send the backend keys
                 },
             };
 
@@ -148,7 +188,7 @@ function RiskQuestions() {
                 setRiskQuestions(data);
                 setShowStaticQuestion(false);
                 setAnswers({});
-                setCurrentQuestionIndex(0); // Reset to first question
+                setCurrentQuestionIndex(0);
             } else {
                 setFinalReport(data);
                 setShowStaticQuestion(false);
@@ -219,7 +259,7 @@ function RiskQuestions() {
     // --- Render Logic ---
 
     if (showStaticQuestion && assessmentResult) {
-        const q = initialStaticQuestion;
+        const q = currentStaticQuestion;
         return (
             <div className="bg-gray-50 font-inter flex items-center justify-center min-h-screen p-4">
                 <div className="bg-white rounded-xl shadow-md p-6 sm:p-8 w-full max-w-4xl">
