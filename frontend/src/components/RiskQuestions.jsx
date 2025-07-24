@@ -465,7 +465,6 @@ currentBoxY += detailLineHeight;
 
             const complianceLevels = [
                 { range: "85–100%", text: "Fully Compliant", color: [76, 175, 80] },   // Green
-                { range: "70–84%", text: "Mostly Compliant", color: [255, 193, 7] },   // Amber/Yellow
                 { range: "50–69%", text: "Partially Compliant", color: [255, 152, 0] }, // Orange
                 { range: "Below 50%", text: "Non-Compliant", color: [244, 67, 54] }    // Red
             ];
