@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { jsPDF } from 'jspdf'; // Import jsPDF library
 
 // --- Icon components (Assumed to be available) ---
 const DocumentIcon = () => (
@@ -175,6 +176,7 @@ function RiskQuestions() {
     const [error, setError] = useState(null);
     const [answers, setAnswers] = useState({});
     const [finalReport, setFinalReport] = useState(null);
+    const [pdfLoading, setPdfLoading] = useState(false); // State for PDF generation loading
 
     const [showStaticQuestion, setShowStaticQuestion] = useState(true);
     const [staticQuestionAnswers, setStaticQuestionAnswers] = useState([]);
@@ -341,6 +343,170 @@ function RiskQuestions() {
         navigate('/preliminary', { replace: true });
     };
 
+    // New function to handle PDF download directly on frontend using jsPDF
+    const handleDownloadReport = async () => {
+        if (!finalReport || !finalReport.scoring) {
+            // Using a custom message box instead of alert()
+            const messageBox = document.createElement('div');
+            messageBox.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
+            messageBox.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+                    <p class="text-lg font-semibold mb-4">No report data available to download.</p>
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="this.closest('.fixed').remove()">OK</button>
+                </div>
+            `;
+            document.body.appendChild(messageBox);
+            return;
+        }
+
+        setPdfLoading(true);
+        setError(null);
+
+        try {
+            const { scoring } = finalReport;
+
+            // Initialize jsPDF
+            const doc = new jsPDF();
+            
+            // Set initial position and line height
+            let yPos = 20; // Starting Y position from the top
+            const lineHeight = 10;
+            const margin = 15; // Left/right margin
+            const pageWidth = doc.internal.pageSize.getWidth();
+
+            // Header: EU Artificial Intelligence Act
+            doc.setFontSize(18);
+            doc.text("EU Artificial Intelligence Act", margin, yPos);
+            yPos += lineHeight * 2;
+
+            // Introduction Text with proper line breaks
+            doc.setFontSize(10);
+            const introLines = [
+                "Thank you for visiting our site and using our application to assess your system's compliance with the EU Artificial Intelligence Act.",
+                "You’ve successfully completed the assessment and received a detailed compliance report. This report helps you:",
+                "     •  Understand how well your system aligns with the EU AI Act",
+                "     •  Confirm that your system can be used legally and responsibly",
+                "     •  Identify areas to improve based on your current score",
+                "     •  Strengthen future compliance with AI regulations",
+                "You're all set to use your application confidently, backed by clear guidance and compliance insights.",
+                "We appreciate your trust in our tool — feel free to revisit anytime to re-check and enhance your system!"
+            ];
+            
+            introLines.forEach(line => {
+                const splitLine = doc.splitTextToSize(line, pageWidth - (2 * margin));
+                doc.text(splitLine, margin, yPos);
+                yPos += (splitLine.length * (lineHeight * 0.7)); // Adjust line height for smaller font
+            });
+            yPos += lineHeight; // Extra spacing after introduction
+
+            // Grey Square Box for Summary
+            const boxStartX = margin;
+            const boxStartY = yPos;
+            const boxWidth = pageWidth - (2 * margin);
+            const detailLineHeight = 8; // For each detail line in the summary
+            const summaryBoxPadding = 10; // Padding inside the box
+
+            const boxContentLines = 5; // For Complaint, Domain, Risk Level, Score, Compliance Percentage
+            const boxHeight = (boxContentLines * detailLineHeight) + (summaryBoxPadding * 2) + 5; // Adjust for title removal
+
+            doc.setFillColor(240, 240, 240); // Light grey color
+            doc.rect(boxStartX, boxStartY, boxWidth, boxHeight, 'F'); // 'F' for fill
+
+            // Content inside the grey box
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0); // Black text for content
+            let currentBoxY = boxStartY + summaryBoxPadding; // Padding from top of box
+            
+            doc.text("Below is the summary of the Report :", boxStartX + 10, currentBoxY); // Add the new requested text
+            currentBoxY += lineHeight; // Adjust for this new line
+
+           // Complaint
+doc.setFont(undefined, 'bold');
+doc.text('Complaint:', boxStartX + 10, currentBoxY);
+doc.setFont(undefined, 'normal');
+doc.text(`${scoring.compliance_level}`, boxStartX + 50, currentBoxY);
+currentBoxY += detailLineHeight;
+
+// Domain
+doc.setFont(undefined, 'bold');
+doc.text('Domain:', boxStartX + 10, currentBoxY);
+doc.setFont(undefined, 'normal');
+doc.text(`${scoring.domain}`, boxStartX + 50, currentBoxY);
+currentBoxY += detailLineHeight;
+
+// Risk Level
+doc.setFont(undefined, 'bold');
+doc.text('Risk Level:', boxStartX + 10, currentBoxY);
+doc.setFont(undefined, 'normal');
+doc.text(`${scoring.risk_level.toUpperCase()}`, boxStartX + 50, currentBoxY);
+currentBoxY += detailLineHeight;
+
+// Score
+doc.setFont(undefined, 'bold');
+doc.text('Score:', boxStartX + 10, currentBoxY);
+doc.setFont(undefined, 'normal');
+doc.text(`${scoring.score} out of ${scoring.out_of}`, boxStartX + 50, currentBoxY);
+currentBoxY += detailLineHeight;
+
+// Compliance Percentage
+doc.setFont(undefined, 'bold');
+doc.text('Compliance Percentage:', boxStartX + 10, currentBoxY);
+doc.setFont(undefined, 'normal');
+doc.text(`${scoring.compliance_percent}%`, boxStartX + 65, currentBoxY);
+currentBoxY += detailLineHeight;
+
+
+            yPos = boxStartY + boxHeight + lineHeight * 2; // Position below the box
+
+            // Complaint under the EU AI Act section with colored dots
+            doc.setFontSize(16);
+            doc.text("Complaint under the EU AI Act", margin, yPos);
+            yPos += lineHeight;
+
+            const complianceLevels = [
+                { range: "85–100%", text: "Fully Compliant", color: [76, 175, 80] },   // Green
+                { range: "70–84%", text: "Mostly Compliant", color: [255, 193, 7] },   // Amber/Yellow
+                { range: "50–69%", text: "Partially Compliant", color: [255, 152, 0] }, // Orange
+                { range: "Below 50%", text: "Non-Compliant", color: [244, 67, 54] }    // Red
+            ];
+
+            doc.setFontSize(12);
+            complianceLevels.forEach(level => {
+                // Draw the colored dot first
+                doc.setFillColor(level.color[0], level.color[1], level.color[2]);
+
+                // Position the dot at the margin, and adjust y for better vertical alignment
+                const dotX = margin + 2; // Small offset from the margin
+                // Adjusted vertical alignment:
+                // We were at yPos - 3. To bring it down, we need a smaller subtraction.
+                // Let's try yPos - 2, or even yPos - 1.5 for a very slight downward shift.
+                const dotY = yPos - 2; // Try -2. If still too high, try -1.5. If too low, try -2.5.
+                                      // This value needs fine-tuning for perfect alignment.
+                doc.circle(dotX, dotY, 2, 'F'); // Draw the dot
+
+                // Then, draw the text next to the dot
+                doc.setFont('helvetica', 'normal');
+                const textStartX = dotX + 7; // Start text slightly after the dot
+                doc.text(`${level.range} - ${level.text}`, textStartX, yPos);
+
+                yPos += lineHeight;
+            });
+            yPos += lineHeight; // Extra spacing after the list
+
+            // Removed "Key Actions Recommended" section entirely as per request
+
+            // Save the PDF
+            doc.save(`AI_Assessment_Report_${scoring.compliance_level || 'General'}.pdf`);
+
+        } catch (err) {
+            console.error('Error generating PDF:', err);
+            setError(err.message || 'Failed to generate PDF report.');
+        } finally {
+            setPdfLoading(false);
+        }
+    };
+
+
     // --- Render Logic ---
 
     if (showStaticQuestion && assessmentResult) {
@@ -422,7 +588,7 @@ function RiskQuestions() {
                                     </div>
                                 </div>
                             </div>
-                            <div class="text-2xl font-bold text-blue-900 mb-4"> Score</div>
+                            <div className="text-2xl font-bold text-blue-900 mb-4"> Score</div>
                             {/* Pie Chart and Score/Percentage Display */}
                             <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-6">
                             
@@ -432,7 +598,7 @@ function RiskQuestions() {
                                         {scoring.score} / {scoring.out_of}
                                     </p>
                                     <p className="text-2xl font-semibold text-gray-700 mt-2">
-                                        <span className="text-blue-900 animate-pulse">{scoring.compliance_percent}%</span> Compliant
+                                        <span className="text-blue-900">{scoring.compliance_percent}%</span> Compliant
                                     </p>
                                 </div>
                             </div>
@@ -444,10 +610,21 @@ function RiskQuestions() {
                         </div>
                     )}
 
-             
-                    <button onClick={handleStartNewAssessment} className="px-8 py-3 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105">
-                        Start New Assessment
-                    </button>
+                  
+
+                    <div className="flex justify-center gap-4 mt-8">
+                        {/* New Download Report Button */}
+                        <button 
+                            onClick={handleDownloadReport} 
+                            disabled={pdfLoading}
+                            className="px-8 py-3 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {pdfLoading ? 'Generating PDF...' : 'Download Report'}
+                        </button>
+                        <button onClick={handleStartNewAssessment} className="px-8 py-3 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105">
+                            Start New Assessment
+                        </button>
+                    </div>
                 </div>
             </div>
         );
