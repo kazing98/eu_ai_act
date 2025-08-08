@@ -179,8 +179,6 @@ def evaluate_compliance(risk: str, user_domain: str, answers: dict):
 
     if compliance_percent >= 85:
         band = "Fully Compliant"
-    elif compliance_percent >= 70:
-        band = "Mostly Compliant"
     elif compliance_percent >= 50:
         band = "Partially Compliant"
     else:
